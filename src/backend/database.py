@@ -2,11 +2,31 @@
 MongoDB database configuration and setup for Mergington High School API
 """
 
-from pymongo import MongoClient
+import os
 from argon2 import PasswordHasher, exceptions as argon2_exceptions
 
-# Connect to MongoDB
-client = MongoClient('mongodb://localhost:27017/')
+# Use mongomock for development when explicitly enabled
+use_mock = os.environ.get('USE_MOCK_DB', 'false').lower() == 'true'
+
+if use_mock:
+    import mongomock
+    client = mongomock.MongoClient()
+    print("Using mongomock for development (in-memory database)")
+else:
+    from pymongo import MongoClient, errors as pymongo_errors
+    mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
+    try:
+        # Establish client and verify connection early to fail fast if misconfigured
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        client.admin.command("ping")
+        print(f"Using MongoDB at {mongo_uri}")
+    except pymongo_errors.PyMongoError as exc:
+        raise RuntimeError(
+            "Failed to connect to MongoDB and USE_MOCK_DB is not enabled. "
+            "Set USE_MOCK_DB=true to use an in-memory mock database for development, "
+            "or configure the MONGODB_URI/USE_MOCK_DB environment variables correctly."
+        ) from exc
+
 db = client['mergington_high']
 activities_collection = db['activities']
 teachers_collection = db['teachers']
