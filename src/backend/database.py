@@ -26,12 +26,6 @@ else:
             "Set USE_MOCK_DB=true to use an in-memory mock database for development, "
             "or configure the MONGODB_URI/USE_MOCK_DB environment variables correctly."
         ) from exc
-    client = mongomock.MongoClient()
-    print("Using mongomock for development (in-memory database)")
-else:
-    from pymongo import MongoClient
-    client = MongoClient('mongodb://localhost:27017/')
-    print("Using MongoDB at localhost:27017")
 
 db = client['mergington_high']
 activities_collection = db['activities']
